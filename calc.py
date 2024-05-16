@@ -13,7 +13,6 @@ class Token:
     """
     Stores a token as a (type, value) pair.
     """
-
     def __init__(self, type, value):
         self.type = type
         self.value = value
@@ -25,91 +24,130 @@ class Token:
         return self.__str__()
 
 
+class Lexer:
+	"""
+	Tokenizes input.
+	Call `get_next_token` to get next token in input
+	"""
+	def __init__(self, text):
+		self.text = text
+		self.pos = 0
+		self.max_len = len(text)
+		self.current_char = self.text[self.pos]
+
+	def error(self):
+		raise Exception("Invalid character.")
+
+	def advance(self):
+		self.pos += 1
+		if self.pos < self.max_len:
+			self.current_char = self.text[self.pos]
+		else:
+			self.current_char = None
+
+	def skip_space(self):
+		while self.current_char.isspace():
+			self.advance()
+
+	def get_int(self):
+		int_str = ""
+		while self.current_char is not None and self.current_char.isdigit():
+			int_str += self.current_char
+			self.advance()
+		return int(int_str)
+
+	def get_next_token(self):
+		if self.pos >= self.max_len:
+			return Token(EOS, None)
+
+		if self.current_char.isspace():
+			self.skip_space()
+			return self.get_next_token()
+
+		if self.current_char.isdigit():
+			return Token(INTEGER, self.get_int())
+
+		if self.current_char == "+":
+			self.advance()
+			return Token(PLUS, "+")
+
+		if self.current_char == "-":
+			self.advance()
+			return Token(MINUS, "-")
+
+		if self.current_char == "*":
+			self.advance()
+			return Token(TIMES, "*")
+
+		if self.current_char == "/":
+			self.advance()
+			return Token(DIV, "/")
+
+		self.error()
+
 class Interpreter:
+	"""
+	Contains a parser and interpreter.
+	Parser structures stream of tokens produced by lexer.
+	Interpreter computes the structure given by the parser
+	"""
+	def __init__(self, lexer):
+		self.lexer = lexer
+		self.pos = 0
+		self.current_token = self.lexer.get_next_token()
 
-    def __init__(self, text):
-        self.text = text
-        self.pos = 0
-        self.max_len = len(text)
-        self.current_token = None
-        self.current_char = self.text[self.pos]
+	def error(self):
+		raise Exception("Invalid syntax.")
 
-    def error(self):
-        raise Exception("Unable to parse input.")
+	def eat(self, type):
+		if self.current_token.type == type:
+			self.current_token = self.lexer.get_next_token()
+		else:
+			raise self.error()
 
-    def advance(self):
-        self.pos += 1
-        if self.pos < self.max_len:
-            self.current_char = self.text[self.pos]
-        else:
-            self.current_char = None
-        
+	def factor(self):
+		"""
+		factor : INTEGER
+		"""
+		val = self.current_token.value
+		self.eat(INTEGER)
+		return val
 
-    def get_next_token(self):
-        if self.pos >= self.max_len:
-            return Token(EOS, None)
+	def term(self):
+		"""
+		term : factor((TIMES | DIV) factor)*
+		"""
+		result = self.factor()
 
-        if self.current_char.isspace():
-            self.skip_space()
-            return self.get_next_token()
-        if self.current_char.isdigit():
-            return Token(INTEGER, self.get_int())
-        if self.current_char == "+":
-            self.advance()
-            return Token(PLUS, "+")
-        if self.current_char == "-":
-            self.advance()
-            return Token(MINUS, "-")
-        if self.current_char == "*":
-            self.advance()
-            return Token(TIMES, "*")
-        if self.current_char == "/":
-            self.advance()
-            return Token(DIV, "/")
-        self.error()
+		while self.current_token.type in (TIMES, DIV):
+			token = self.current_token
+			if token.type == TIMES:
+				self.eat(TIMES)
+				result *= self.factor()
+			if token.type == DIV:
+				self.eat(DIV)
+				result /= self.factor()
+		return result
 
-    def skip_space(self):
-        while self.current_char.isspace():
-            self.advance()
+	def expr(self):
+		"""
+		expr : term((PLUS | MINUS) term)*
+		"""
+		result = self.term()
 
-    def get_int(self):
-        int_str = ""
-        while self.current_char is not None and self.current_char.isdigit():
-            int_str += self.current_char
-            self.advance()
-        return int(int_str)
+		while self.current_token.type in (PLUS, MINUS):
 
-    def eat(self, type):
-        """
-        Intuitively: call eat(TYPE) when finished processing some token of type TYPE
-        This loads the next token in self.current_token
-        """
-        if self.current_token.type == type:
-            self.current_token = self.get_next_token()
-        else:
-            raise self.error()
+			token = self.current_token
+			if token.type == PLUS:
+				self.eat(PLUS)
+				result += self.term()
+			if token.type == MINUS:
+				self.eat(MINUS)
+				result -= self.term()
 
-    def term(self):
-        val = self.current_token.value
-        self.eat(INTEGER)
-        return val
+		return result
 
-    def eval(self):
-        self.current_token = self.get_next_token()
 
-        res = self.term()
-        while self.current_token.type in (PLUS, MINUS):
-            token = self.current_token
-            if token.type == PLUS:
-                self.eat(PLUS)
-                res += self.term()
-            if token.type == MINUS:
-                self.eat(MINUS)
-                res -= self.term()
-        
-        return res
-
-        
 
 def main():
     while True:
@@ -120,8 +158,9 @@ def main():
             break
         if not text:
             continue
-        interpreter = Interpreter(text)
-        result = interpreter.eval()
+        lexer = Lexer(text)
+        interpreter = Interpreter(lexer)
+        result = interpreter.expr()
         print(result)
 
 
