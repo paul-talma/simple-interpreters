@@ -1,10 +1,3 @@
-# class for tokens
-# class for interpreter
-# main method taking input and interpreting it
-
-# token class just stores the type and value of the token
-# interpreter class initialized with input, implements lexer,
-# and implements evaluation of input
 
 INTEGER, PLUS, MINUS, TIMES, DIV, LPAR, RPAR, EOS = "INTEGER", "PLUS", "MINUS", "TIMES", "DIV", "LPAR", "RPAR", "EOS"
 
