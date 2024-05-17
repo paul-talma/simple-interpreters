@@ -111,8 +111,15 @@ private:
 
 class Interpreter {
 public:
-  Interpreter(Lexer & lexer) : m_lexer(lexer), currentToken(m_lexer.getNextToken()) {
-    // Token currentToken = m_lexer.getNextToken();
+  Interpreter(Lexer & lexer) : m_lexer(lexer), currentToken(m_lexer.getNextToken()) {}
+
+  int divisor(int fac) {
+    if (fac == 0) {
+      throw runtime_error("Dividing by 0!");
+    } else {
+      return fac;
+    }
+    
   }
 
   void eat(string kind) {
@@ -150,6 +157,10 @@ public:
 
       if (op == DIV) {
         eat(DIV);
+        int fac = factor();
+        if (fac == 0) {
+            throw runtime_error("Dividing by 0!");
+          }
         result /= factor();
       }
     }

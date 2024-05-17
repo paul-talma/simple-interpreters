@@ -140,6 +140,9 @@ class Interpreter:
 				result *= self.factor()
 			if token.type == DIV:
 				self.eat(DIV)
+				div = self.factor()
+				if div == 0:
+					raise ZeroDivisionError("Dividing by 0!")
 				result /= self.factor()
 		return result
 
