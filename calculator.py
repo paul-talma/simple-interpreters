@@ -6,7 +6,7 @@
 # interpreter class initialized with input, implements lexer,
 # and implements evaluation of input
 
-INTEGER, PLUS, MINUS, TIMES, DIV, EOS = "INTEGER", "PLUS", "MINUS", "TIMES", "DIV", "EOS"
+INTEGER, PLUS, MINUS, TIMES, DIV, LPAR, RPAR, EOS = "INTEGER", "PLUS", "MINUS", "TIMES", "DIV", "LPAR", "RPAR", "EOS"
 
 
 class Token:
@@ -82,6 +82,14 @@ class Lexer:
 		if self.current_char == "/":
 			self.advance()
 			return Token(DIV, "/")
+		
+		if self.current_char == "(":
+			self.advance()
+			return Token(LPAR, "(")
+		
+		if self.current_char == ")":
+			self.advance()
+			return Token(RPAR, ")")
 
 		self.error()
 
@@ -107,11 +115,17 @@ class Interpreter:
 
 	def factor(self):
 		"""
-		factor : INTEGER
+		factor : INTEGER | LPAR expr RPAR
 		"""
-		val = self.current_token.value
-		self.eat(INTEGER)
-		return val
+		if self.current_token.type == INTEGER:
+			result = self.current_token.value
+			self.eat(INTEGER)
+		elif self.current_token.type == LPAR:
+			self.eat(LPAR)
+			result = self.expr()
+			self.eat(RPAR)
+		
+		return result
 
 	def term(self):
 		"""

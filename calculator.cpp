@@ -5,7 +5,7 @@
 
 using namespace std;
 
-string INT = "INT", PLUS = "PLUS", MINUS = "MINUS", MUL = "MUL", DIV = "DIV",
+string INT = "INT", PLUS = "PLUS", MINUS = "MINUS", MUL = "MUL", DIV = "DIV", LP = "LP", RP = "RP",
        EOS = "EOS";
 
 class Token {
@@ -62,12 +62,20 @@ public:
       return Token(DIV, "/");
     }
 
+    if (currentChar == '(') {
+      advance();
+      return Token(LP, "(");
+    }
+
+    if (currentChar == ')') {
+      advance();
+      return Token(RP, ")");
+    }
+
     throw runtime_error("Invalid character!");
   }
 
 private:
-  // void error() const { throw domain_error("Invalid character"); }
-
   bool advance() {
     pos++;
     if (pos < maxLen) {
@@ -103,7 +111,9 @@ private:
 
 class Interpreter {
 public:
-  Interpreter(Lexer & lexer) : m_lexer(lexer), currentToken(Token(EOS, "\0")) {}
+  Interpreter(Lexer & lexer) : m_lexer(lexer), currentToken(m_lexer.getNextToken()) {
+    // Token currentToken = m_lexer.getNextToken();
+  }
 
   void eat(string kind) {
     if (currentToken.getKind() == kind) {
@@ -114,9 +124,17 @@ public:
   }
 
   int factor() {
-    string val = currentToken.getValue();
-    eat(INT);
-    return stoi(val);
+    if (currentToken.getKind() == INT) {
+      string val = currentToken.getValue();
+      eat(INT);
+      return stoi(val);
+    } else if (currentToken.getKind() == LP) {
+      eat(LP);
+      int result = expr();
+      eat(RP);
+      return result;
+    }
+    error();
   }
 
   int term() {
@@ -139,8 +157,6 @@ public:
   }
 
   int expr() {
-    currentToken = m_lexer.getNextToken();
-
     int result = term();
 
     while (currentToken.getKind() == PLUS || currentToken.getKind() == MINUS) {
@@ -151,7 +167,7 @@ public:
         result += term();
       }
 
-      if (op == MINUS) {
+      else if (op == MINUS) {
         eat(MINUS);
         result -= term();
       }
