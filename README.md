@@ -16,8 +16,8 @@ Working up to implementing an interpreter for a simple language. `calc.py` is an
 - [x] mul/div and plus/minus
 - [x] parentheses
 
-### Calculator with AST
+### Simple Pascal Interpreter
 
-- [ ] define AST classes
+- [x] define AST classes
 - [x] separate parser and interpreter
-  - [ ] define `factor`, `term` and `expr` for ASTs
+  - [x] define `factor`, `term` and `expr` for ASTs
