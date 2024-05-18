@@ -43,7 +43,7 @@ class Lexer:
 
 	def get_int(self):
 		int_str = ""
-		while self.current_char is not None and self.current_char.isdigit():
+		while self.current_char.isdigit():
 			int_str += self.current_char
 			self.advance()
 		return int(int_str)
@@ -74,17 +74,17 @@ class Lexer:
 		if self.current_char == "/":
 			self.advance()
 			return Token(DIV, "/")
-		
+
 		if self.current_char == "(":
 			self.advance()
 			return Token(LPAR, "(")
-		
+
 		if self.current_char == ")":
 			self.advance()
 			return Token(RPAR, ")")
 
 		self.error()
-		
+
 
 class AST():
 	pass
@@ -94,7 +94,7 @@ class BinOp(AST):
 		self.left = left
 		self.token = self.op = op
 		self.right = right
-		
+
 class Num(AST):
 	def __init__(self, token):
 		self.token = token
@@ -104,7 +104,7 @@ class Parser:
 	def __init__(self, lexer):
 		self.current_token = lexer.get_next_token()
 		self.lexer = lexer
-	
+
 	def eat(self, type):
 		if self.current_token.type == type:
 			self.current_token = self.lexer.get_next_token()
@@ -134,9 +134,9 @@ class Parser:
 			elif token.type == DIV:
 				self.eat(DIV)
 				node = BinOp(node, token, self.factor())
-			
+
 		return node
-	
+
 
 	def expr(self):
 		node = self.term()
@@ -149,18 +149,18 @@ class Parser:
 			elif token.type == MINUS:
 				self.eat(MINUS)
 				node = BinOp(node, token, self.term())
-				
+
 		return node
 
 	def parse(self):
 		return self.expr()
-	
+
 class NodeVisitor: # this is cool
 	def visit(self, node):
 		method_name = 'visit_' + type(node).__name__
 		visitor = getattr(self, method_name, self.generic_visit)
 		return visitor(node)
-	
+
 	def generic_visit(self, node):
 		raise Exception(f"No visit_{type(node).__name__} method")
 
@@ -168,7 +168,7 @@ class NodeVisitor: # this is cool
 class Interpreter(NodeVisitor):
 	def __init__(self, parser):
 		self.parser = parser
-	
+
 	def visit_BinOp(self, node):
 		if node.op.type == PLUS:
 			return self.visit(node.left) + self.visit(node.right)
@@ -178,10 +178,10 @@ class Interpreter(NodeVisitor):
 			return self.visit(node.left) * self.visit(node.right)
 		if node.op.type == DIV:
 			return self.visit(node.left) // self.visit(node.right)
-		
+
 	def visit_Num(self, node):
 		return node.value
-	
+
 	def interpret(self):
 		tree = self.parser.parse()
 		return self.visit(tree)
