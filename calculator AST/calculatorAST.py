@@ -1,3 +1,8 @@
+# grammar:
+	# expr : term((PLUS|MINUS) term)*
+	# term : factor((MUL|DIV) factor)*
+	# factor: INTEGER | LP expr RP | (PLUS|MINUS)factor
+
 INT, PLUS, MINUS, MUL, DIV, LPAR, RPAR, EOS = "INT", "PLUS", "MINUS", "MUL", "DIV", "LPAR", "RPAR", "EOS"
 
 
@@ -89,6 +94,11 @@ class Lexer:
 class AST():
 	pass
 
+class UnOp(AST):
+	def __init__(self, op, right):
+		self.op = op
+		self.right = right
+
 class BinOp(AST):
 	def __init__(self, left, op, right):
 		self.left = left
@@ -121,6 +131,9 @@ class Parser:
 			result = self.expr()
 			self.eat(RPAR)
 			return result
+		elif token.type == PLUS or token.type == MINUS:
+			self.eat(token.type)
+			return UnOp(token, self.factor())
 
 
 	def term(self):
@@ -168,6 +181,13 @@ class NodeVisitor: # this is cool
 class Interpreter(NodeVisitor):
 	def __init__(self, parser):
 		self.parser = parser
+
+	def visit_UnOp(self, node):
+		op = node.op.type
+		if op == PLUS:
+			return self.visit(node.right)
+		if op == MINUS:
+			return - self.visit(node.right)
 
 	def visit_BinOp(self, node):
 		if node.op.type == PLUS:
