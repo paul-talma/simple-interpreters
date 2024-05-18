@@ -38,12 +38,12 @@ class Lexer:
 			self.current_char = None
 
 	def skip_space(self):
-		while self.current_char.isspace():
+		while self.current_char is not None and self.current_char.isspace():
 			self.advance()
 
 	def get_int(self):
 		int_str = ""
-		while self.current_char.isdigit():
+		while self.current_char is not None and self.current_char.isdigit():
 			int_str += self.current_char
 			self.advance()
 		return int(int_str)
@@ -141,7 +141,7 @@ class Parser:
 	def expr(self):
 		node = self.term()
 
-		while self.current_token.type == PLUS or self.current_token == MINUS:
+		while self.current_token.type == PLUS or self.current_token.type == MINUS:
 			token = self.current_token
 			if token.type == PLUS:
 				self.eat(PLUS)
