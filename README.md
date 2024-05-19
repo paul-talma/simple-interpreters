@@ -18,6 +18,11 @@ Working up to implementing an interpreter for a simple language. `calc.py` is an
 -   [x] AST
     -   [ ] C++ implementation for ASTs (hard!)
 -   [x] separate parser and interpreter
--   [ ] unary operators
+-   [x] unary operators
 
 ### Simple Pascal Interpreter
+
+-   [x] add new token types
+-   [x] update lexer
+-   [ ] update parser
+-   [ ] update interpreter
