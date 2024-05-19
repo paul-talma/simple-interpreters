@@ -26,3 +26,8 @@ Working up to implementing an interpreter for a simple language. `calc.py` is an
 -   [x] write lexer
 -   [x] write parser
 -   [x] write interpreter
+-   [ ] variable types
+    -   [ ] type checking
+-   [ ] replace '/' with 'div'
+-   [ ] make keywords and identifiers case insensitive
+-   [ ] variable names can start with '\_'
