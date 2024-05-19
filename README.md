@@ -23,6 +23,6 @@ Working up to implementing an interpreter for a simple language. `calc.py` is an
 ### Simple Pascal Interpreter
 
 -   [x] add new token types
--   [x] update lexer
--   [ ] update parser
--   [ ] update interpreter
+-   [x] write lexer
+-   [x] write parser
+-   [x] write interpreter
