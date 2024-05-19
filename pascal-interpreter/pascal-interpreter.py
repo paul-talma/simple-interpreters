@@ -35,6 +35,23 @@ class Token:
 		self.type = type
 		self.value = value
 
+	def __str__(self):
+		"""String representation of the class instance.
+
+        Examples:
+            Token(INTEGER, 3)
+            Token(PLUS, '+')
+            Token(MUL, '*')
+        """
+		return 'Token({type}, {value})'.format(
+            type=self.type,
+            value=repr(self.value)
+        )
+
+	def __repr__(self):
+		return self.__str__()
+	
+
 RESERVED_KEYWORDS = {
 	'BEGIN': Token(BEGIN, 'BEGIN'),
 	'END': Token(END, 'END')
@@ -67,6 +84,7 @@ class Lexer:
 		while self.ch is not None and self.ch.isdigit():
 			num += self.ch
 			self.advance()
+		return Token(INT, int(num))
 
 	def peek(self):
 		if self.pos + 1 < self.max_len:
@@ -84,6 +102,7 @@ class Lexer:
 			self.advance()
 
 		token = RESERVED_KEYWORDS.get(id, Token(ID, id))
+		return token
 
 	def get_token(self):
 		if self.pos >= self.max_len:
@@ -91,7 +110,7 @@ class Lexer:
 
 		if self.ch.isspace():
 			self.skip_spaces()
-			self.get_token()
+			return self.get_token()
 
 		if self.ch.isdigit():
 			return self.get_int()
@@ -130,10 +149,11 @@ class Lexer:
 
 		if self.ch == ':' and self.peek() == '=':
 			self.advance()
+			self.advance()
 			return Token(ASSIGN, ':=')
 
 		if self.ch.isalpha():
-			return self._id
+			return self._id()
 
 class AST:
 	pass
@@ -141,6 +161,16 @@ class AST:
 #############################################
 #				AST Node Types				#
 #############################################
+
+class Compound(AST):
+	def __init__(self, statement_list):
+		self.statement_list = statement_list
+
+class Assignment(AST):
+	def __init__(self, var, op, expr):
+		self.var = var
+		self.op = op 					# why is this needed?
+		self.expr = expr
 
 class UnOp(AST):
 	def __init__(self, op, expr):
@@ -157,23 +187,13 @@ class Num(AST):
 	def __init__(self, value):
 		self.value = value
 
-class Compound(AST):
-	def __init__(self, statement_list):
-		self.statement_list = statement_list
-
-class Assignment(AST):
-	def __init__(self, var, op, expr):
-		self.var = var
-		self.op = op 					# why is this needed?
-		self.expr = expr
-
-class Empty(AST):
-	pass
-
 class Variable(AST):
 	def __init__(self, token):
 		self.token = token
 		self.value = token.value
+
+class Empty(AST):
+	pass
 
 #############################################
 #					Parser					#
@@ -207,13 +227,10 @@ class Parser:
 
 	def statement_list(self):
 		statements = [self.statement()]
-
 		while self.token.type == SEMI:
 			self.eat(SEMI)
 			statements.append(self.statement())
-
 		return statements
-
 
 	def assigment_statement(self):
 		var = self.variable()
@@ -223,19 +240,15 @@ class Parser:
 		return Assignment(var, op, expr)
 
 	def statement(self):
-		if self.token == ID:
-			self.eat(ID)
+		if self.token.type == ID:
 			return self.assigment_statement()
-
-		elif self.token == BEGIN:
-			self.eat(BEGIN)
+		elif self.token.type == BEGIN:
 			return self.compound_statement()
-
 		else:
 			return self.empty()
 
 	def empty(self):
-		return Empty
+		return Empty()
 
 	def variable(self):
 		var = self.token
@@ -248,45 +261,39 @@ class Parser:
 			num = Num(token.value)
 			self.eat(INT)
 			return num
-
 		if token.type == LP:
 			self.eat(LP)
 			expr = self.expr()
 			self.eat(RP)
 			return expr
-
 		if token.type == PLUS or token.type == MINUS:
 			self.eat(token.type)
 			return UnOp(token, self.factor())
-
 		if token.type == ID:
 			return self.variable()
 
 	def term(self):
 		node = self.factor()
-
 		while self.token.type == MUL or self.token.type == DIV:
 			op = self.token
 			self.eat(op.type)
 			right_term = self.factor()
 			node = BinOp(node, op, right_term)
+		return node
 
 	def expr(self):
 		node = self.term()
-
 		while self.token.type == PLUS or self.token.type == MINUS:
 			op = self.token
 			self.eat(op.type)
 			right_term = self.term()
 			node = BinOp(node, op, right_term)
-
 		return node
 
 	def parse(self):
 		tree = self.program()
-		if self.token != EOS:
+		if self.token.type != EOS:
 			self.error()
-
 		return tree
 
 
@@ -304,12 +311,16 @@ class NodeVisitor:
 		raise Exception(f"No method named visit_{type(node).__name__}.")
 
 class Interpreter(NodeVisitor):
+	GLOBAL_SCOPE = {}
+
 	def __init__(self, parser):
 		self.parser = parser
-		self.GLOBAL_SCOPE = {}
 
 	def interpret(self):
-		self.visit(self.parser.parse())
+		tree = self.parser.parse()
+		if tree is None:
+			return ''
+		return self.visit(tree)
 
 	def visit_Num(self, num_node):
 		return num_node.value
@@ -324,22 +335,22 @@ class Interpreter(NodeVisitor):
 
 	def visit_UnOp(self, un_op):
 		if un_op.op == PLUS:
-			return self.visit(un_op.value)
+			return self.visit(un_op.expr)
 		if un_op.op == MINUS:
-			return self.visit(-un_op.value)
+			return -self.visit(un_op.expr)
 
 	def visit_BinOp(self, bin_op):
 		left = bin_op.left
-		op = bin_op.op
+		op = bin_op.op.type
 		right = bin_op.right
 		if op == PLUS:
-			return left + right
+			return self.visit(left) + self.visit(right)
 		if op == MINUS:
-			return left - right
+			return self.visit(left) - self.visit(right)
 		if op == MUL:
-			return left * right
+			return self.visit(left) * self.visit(right)
 		if op == DIV:
-			return left // right
+			return self.visit(left) // self.visit(right)
 
 	def visit_Compound(self, compound):
 		for statement in compound.statement_list:
@@ -349,32 +360,29 @@ class Interpreter(NodeVisitor):
 		var_name = assignment.var.value
 		self.GLOBAL_SCOPE[var_name] = self.visit(assignment.expr)
 
-	def visit_Empty(self):
+	def visit_Empty(self, node):
 		pass
 
 def main():
+	import sys
+
 	print("="*41)
 	print("Welcome to your Simple Pascal Interpreter")
 	print("="*41)
-	while True:
-		try:
-			filename = input("SPI (enter program name)> ")
-		except EOFError:
-			print("Invalid input")
-			break
-		if not filename:
-			continue
-		filename = filename.strip()
-		with open(filename, 'r') as fid:
-			text = ""
-			for line in fid.readlines():
-				text += line.strip() + " "
+	# while True:
+	# text = open(sys.argv[1], 'r').read()
+	# filename = filename.strip()
+	# with open(filename, 'r') as fid:
+	# 	text = ""
+	# 	for line in fid.readlines():
+	# 		text += line.strip() + " "
 
-		lexer = Lexer(text)
-		parser = Parser(lexer)
-		interpreter = Interpreter(parser)
-		result = interpreter.interpret()
-		print(result)
+	text = open("/Users/paultalma/Programming/simple-interpreters/pascal-interpreter/test.txt", 'r').read()
+	lexer = Lexer(text)
+	parser = Parser(lexer)
+	interpreter = Interpreter(parser)
+	result = interpreter.interpret()
+	print(interpreter.GLOBAL_SCOPE)
 
 if __name__ == "__main__":
 	main()
