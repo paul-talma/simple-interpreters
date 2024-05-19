@@ -185,9 +185,9 @@ class Interpreter(NodeVisitor):
 	def visit_UnOp(self, node):
 		op = node.op.type
 		if op == PLUS:
-			return self.visit(node.right)
+			return +self.visit(node.right)
 		if op == MINUS:
-			return - self.visit(node.right)
+			return -self.visit(node.right)
 
 	def visit_BinOp(self, node):
 		if node.op.type == PLUS:
@@ -207,9 +207,9 @@ class Interpreter(NodeVisitor):
 		return self.visit(tree)
 
 def main():
-	print("="*41)
-	print("Welcome to your Simple Pascal Interpreter")
-	print("="*41)
+	print("="*35)
+	print("Welcome to your Calculator")
+	print("="*35)
 	while True:
 		try:
 			text = input("SPI>")
