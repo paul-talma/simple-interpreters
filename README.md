@@ -2,6 +2,8 @@
 
 Working up to implementing an interpreter for a simple language. `calc.py` is an interpreter for a simple calculator.
 
+Thanks to [Ruslan Spivak](https://ruslanspivak.com)
+
 ## TODOs
 
 ### Calculator
@@ -16,7 +18,7 @@ Working up to implementing an interpreter for a simple language. `calc.py` is an
 -   [x] mul/div and plus/minus
 -   [x] parentheses
 -   [x] AST
-    -   [ ] C++ implementation for ASTs (hard!)
+    -   [ ] C++ implementation for ASTs (hard—no polymorphism and no introspection!)
 -   [x] separate parser and interpreter
 -   [x] unary operators
 
