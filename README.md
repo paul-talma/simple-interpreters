@@ -28,9 +28,9 @@ Thanks to [Ruslan Spivak](https://ruslanspivak.com).
 -   [x] write lexer
 -   [x] write parser
 -   [x] write interpreter
--   [ ] variable types
+-   [x] variable types
     -   [ ] type checking
 -   [x] replace '/' with 'div'
 -   [x] make keywords and identifiers case insensitive
 -   [x] variable names can start with '\_'
--   [ ] comments
+-   [x] comments
