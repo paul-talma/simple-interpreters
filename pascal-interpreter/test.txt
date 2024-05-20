@@ -2,7 +2,7 @@ PROGRAM Part10;
 VAR
    number     : INTEGER;
    a, b, c, x : INTEGER;
-   y          : REAL;
+   y          : FLOAT;
 
 BEGIN {Part10}
    BEGIN

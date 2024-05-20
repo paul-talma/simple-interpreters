@@ -33,10 +33,7 @@ class Token:
             Token(PLUS, '+')
             Token(MUL, '*')
         """
-		return 'Token({type}, {value})'.format(
-            type=self.type,
-            value=repr(self.value)
-        )
+		return f"Token({self.type}, {repr(self.value)})"
 
 	def __repr__(self):
 		return self.__str__()
@@ -109,8 +106,8 @@ class Lexer:
 			while self.ch is not None and self.ch.isdigit():
 				num += self.ch
 				self.advance()
-				return Token(FLOAT_CONST, float(num))
-
+			return Token(FLOAT_CONST, float(num))
+		
 		return Token(INT_CONST, int(num))
 
 	def peek(self):
@@ -191,6 +188,11 @@ class Lexer:
 			self.advance()
 			return Token(DOT, '.')
 
+		if self.ch == ':' and self.peek() == '=':
+			self.advance()
+			self.advance()
+			return Token(ASSIGN, ':=')
+
 		if self.ch == ':':
 			self.advance()
 			return Token(COLON, ':')
@@ -199,17 +201,12 @@ class Lexer:
 			self.advance()
 			return Token(SEMI, ';')
 
-		if self.ch == ':' and self.peek() == '=':
-			self.advance()
-			self.advance()
-			return Token(ASSIGN, ':=')
-
 		if self.ch.isalpha() or self.ch == '_':
 			return self._id()
 
 		if self.ch == '{': # supports nexsted comments
-			stack = ['{']
 			self.skip_comment()
+			return self.get_token()
 
 
 #############################################
@@ -233,10 +230,22 @@ class Declaration(AST):
 		self.var_node = var_node
 		self.type_node = type_node
 
+	def __str__(self):
+		return f"Variable (token: {self.var_node}, type: {self.type_node})"
+
+	def __repr__(self):
+		return self.__str__()
+
 class Type(AST):
 	def __init__(self, token):
 		self.token = token
 		self.value = token.value
+	
+	def __str__(self):
+		return f"Variable (token: {self.token}, value: {self.value})"
+
+	def __repr__(self):
+		return self.__str__()
 
 class Compound(AST):
 	def __init__(self, statement_list):
@@ -247,11 +256,23 @@ class Assignment(AST):
 		self.var = var
 		self.op = op 					# why is this needed?
 		self.expr = expr
+	
+	def __str__(self):
+		return f"Assignment(var: {self.var}, op: {self.op}, expr: {self.expr})"
+
+	def __repr__(self):
+		return self.__str__()
 
 class UnOp(AST):
 	def __init__(self, op, expr):
 		self.op = op.type
 		self.expr = expr
+
+	def __str__(self):
+		return f"Variable (op: {self.op}, expr: {self.expr})"
+
+	def __repr__(self):
+		return self.__str__()
 
 class BinOp(AST):
 	def __init__(self, left, op, right):
@@ -259,14 +280,31 @@ class BinOp(AST):
 		self.op = op
 		self.right = right
 
+	def __str__(self):
+		return f"BinOp (left: {self.left}, op: {self.op}, right: {self.right})"
+
+	def __repr__(self):
+		return self.__str__()
 class Num(AST):
 	def __init__(self, value):
 		self.value = value
+	
+	def __str__(self):
+		return f"Num (value: {self.value})"
+
+	def __repr__(self):
+		return self.__str__()
 
 class Variable(AST):
 	def __init__(self, token):
 		self.token = token
 		self.value = token.value
+	
+	def __str__(self):
+		return f"Variable (token: {self.token}, name: {self.value})"
+
+	def __repr__(self):
+		return self.__str__()
 
 class Empty(AST):
 	pass
@@ -279,10 +317,9 @@ class Parser:
 	def __init__(self, lexer):
 		self.lexer = lexer
 		self.token = lexer.get_token()
-		self.var = None
 
 	def error(self):
-		raise Exception("Parser error.")
+		raise Exception(f"Parser error. Token: {self.token}")
 
 	def eat(self, type):
 		if self.token.type == type:
@@ -300,6 +337,7 @@ class Parser:
 		self.eat(SEMI)
 		block = self.block()
 		program = Program(program_name, block)
+
 		self.eat(DOT)
 		return program
 
@@ -317,6 +355,7 @@ class Parser:
 			while self.token.type == ID:
 				declarations.append(self.variable_declaration())
 				self.eat(SEMI)
+			declarations = self.flatten(declarations)
 		return declarations
 
 	def variable_declaration(self):
@@ -353,13 +392,6 @@ class Parser:
 			statements.append(self.statement())
 		return statements
 
-	def assigment_statement(self):
-		var = self.variable()
-		op = self.token
-		self.eat(ASSIGN)
-		expr = self.expr()
-		return Assignment(var, op, expr)
-
 	def statement(self):
 		if self.token.type == ID:
 			return self.assigment_statement()
@@ -367,6 +399,13 @@ class Parser:
 			return self.compound_statement()
 		else:
 			return self.empty()
+		
+	def assigment_statement(self):
+		var = self.variable()
+		op = self.token
+		self.eat(ASSIGN)
+		expr = self.expr()
+		return Assignment(var, op, expr)
 
 	def empty(self):
 		return Empty()
