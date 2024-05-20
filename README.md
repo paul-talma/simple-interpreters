@@ -2,7 +2,7 @@
 
 Working up to implementing an interpreter for a simple language. `calc.py` is an interpreter for a simple calculator.
 
-Thanks to [Ruslan Spivak](https://ruslanspivak.com)
+Thanks to [Ruslan Spivak](https://ruslanspivak.com).
 
 ## TODOs
 
@@ -30,6 +30,7 @@ Thanks to [Ruslan Spivak](https://ruslanspivak.com)
 -   [x] write interpreter
 -   [ ] variable types
     -   [ ] type checking
--   [ ] replace '/' with 'div'
--   [ ] make keywords and identifiers case insensitive
--   [ ] variable names can start with '\_'
+-   [x] replace '/' with 'div'
+-   [x] make keywords and identifiers case insensitive
+-   [x] variable names can start with '\_'
+-   [ ] comments
