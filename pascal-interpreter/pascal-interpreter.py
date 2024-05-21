@@ -107,7 +107,7 @@ class Lexer:
 				num += self.ch
 				self.advance()
 			return Token(FLOAT_CONST, float(num))
-		
+
 		return Token(INT_CONST, int(num))
 
 	def peek(self):
@@ -210,7 +210,7 @@ class Lexer:
 
 
 #############################################
-#				AST Node Types				#
+#					 AST					#
 #############################################
 class AST:
 	pass
@@ -240,7 +240,7 @@ class Type(AST):
 	def __init__(self, token):
 		self.token = token
 		self.value = token.value
-	
+
 	def __str__(self):
 		return f"Variable (token: {self.token}, value: {self.value})"
 
@@ -256,7 +256,7 @@ class Assignment(AST):
 		self.var = var
 		self.op = op 					# why is this needed?
 		self.expr = expr
-	
+
 	def __str__(self):
 		return f"Assignment(var: {self.var}, op: {self.op}, expr: {self.expr})"
 
@@ -285,12 +285,14 @@ class BinOp(AST):
 
 	def __repr__(self):
 		return self.__str__()
+
 class Num(AST):
-	def __init__(self, value):
+	def __init__(self, value, type):
 		self.value = value
-	
+		self.type = type
+
 	def __str__(self):
-		return f"Num (value: {self.value})"
+		return f"Num (value: {self.value}; type: {self.type})"
 
 	def __repr__(self):
 		return self.__str__()
@@ -299,7 +301,7 @@ class Variable(AST):
 	def __init__(self, token):
 		self.token = token
 		self.value = token.value
-	
+
 	def __str__(self):
 		return f"Variable (token: {self.token}, name: {self.value})"
 
@@ -399,7 +401,7 @@ class Parser:
 			return self.compound_statement()
 		else:
 			return self.empty()
-		
+
 	def assigment_statement(self):
 		var = self.variable()
 		op = self.token
@@ -418,7 +420,7 @@ class Parser:
 	def factor(self):
 		token = self.token
 		if token.type in (INT_CONST, FLOAT_CONST):
-			num = Num(token.value)
+			num = Num(token.value, token.type)
 			self.eat(token.type)
 			return num
 		if token.type == LP:
@@ -456,9 +458,8 @@ class Parser:
 			self.error()
 		return tree
 
-
 #############################################
-#				  Interpreter				#
+#				  AST Visitors				#
 #############################################
 
 class NodeVisitor:
@@ -470,17 +471,131 @@ class NodeVisitor:
 	def default_visitor(self, node):
 		raise Exception(f"No method named visit_{type(node).__name__}.")
 
-class Interpreter(NodeVisitor):
-	GLOBAL_SCOPE = {}
+#############################################
+#				    Symbols					#
+#############################################
+class Symbol:
+	def __init__(self, name, type_symbol=None):
+		self.name = name
+		self.type_symbol = type_symbol
 
-	def __init__(self, parser):
-		self.parser = parser
+class BuiltInTypeSymbol(Symbol):
+	def __init__(self, name):
+		super().__init__(name)
+
+	def __str__(self):
+		return self.name
+
+	__repr__ = __str__
+
+class VariableSymbol(Symbol):
+	def __init__(self, name, type_symbol):
+		super().__init__(name, type_symbol)
+
+	def __str__(self):
+		return f"<{self.name} : {self.type_symbol}>"
+
+	__repr__ = __str__
+
+#############################################
+#				  Symbol Table				#
+#############################################
+class SymbolTable:
+	def __init__(self):
+		self.symbol_table = {}
+		self.initBuiltIns()
+
+	def initBuiltIns(self):
+		self.define(BuiltInTypeSymbol(INTEGER))
+		self.define(BuiltInTypeSymbol(FLOAT))
+
+	def define(self, symbol):
+		print(f"Defining: {symbol}.")
+		self.symbol_table[symbol.name] = symbol
+
+	def lookup(self, name):
+		print(f"Lookup: {name}.")
+		return self.symbol_table.get(name)
+
+	def __str__(self):
+		return f"Symbol table: {[value for value in self.symbol_table.values()]}"
+
+	__repr__ = __str__
+
+class SymbolTableBuilder(NodeVisitor):
+	def __init__(self):
+		self.symbol_table = SymbolTable()
+
+	def visit_Program(self, program):
+		self.visit(program.block)
+
+	def visit_Block(self, block):
+		for declaration in block.declarations:
+			self.visit(declaration)
+		self.visit(block.compound_statement)
+
+	def visit_Compound(self, compound):
+		for statement in compound.statement_list:
+			self.visit(statement)
+
+	def visit_Assignment(self, assignment):
+		var_name = assignment.var.value
+		var_symbol = self.symbol_table.lookup(var_name)
+		if var_symbol is None:
+			raise NameError(repr(var_name))
+		var_type = var_symbol.type_symbol
+		expr_type = self.visit(assignment.expr)
+		# if var_type != expr_type:
+		# 	raise TypeError(f"Var type: {var_type}; expr type: {expr_type}")
+
+	def visit_Variable(self, variable):
+		var_name = variable.value
+		var_symbol = self.symbol_table.lookup(var_name)
+		if var_symbol is None:
+			raise NameError(repr(variable))
+		# return var_symbol.type_symbol
+
+	def visit_Declaration(self, declaration):
+		var_name = declaration.var_node.value
+		type_name = declaration.type_node.value
+		type_symbol = self.symbol_table.lookup(type_name)
+		var_symbol = VariableSymbol(var_name, type_symbol)
+		self.symbol_table.define(var_symbol)
+
+	def visit_Type(self, type):
+		pass
+
+	def visit_UnOp(self, unop):
+		self.visit(unop.expr)
+
+	def visit_BinOp(self, binop):
+		self.visit(binop.left)
+		self.visit(binop.right)
+
+	def visit_Num(self, num):
+		# type = num.type
+		# if type == INT_CONST:
+		# 	return INTEGER
+		# if type == FLOAT_CONST:
+		# 	return FLOAT
+		pass
+	def visit_Empty(self, empty):
+		pass
+
+#############################################
+#				  Interpreter				#
+#############################################
+
+class Interpreter(NodeVisitor):
+	GLOBAL_MEMORY = {}
+
+	def __init__(self, tree):
+		self.tree = tree
 
 	def interpret(self):
-		program = self.parser.parse()
-		if program is None:
+		if self.tree is None:
 			return ''
-		return self.visit(program)
+		return self.visit(self.tree)
 
 	def visit_Program(self, program):
 		return self.visit(program.block)
@@ -492,13 +607,9 @@ class Interpreter(NodeVisitor):
 		return self.visit(block.compound_statement)
 
 	def visit_Declaration(self, declaration):
-		# var_name = declaration.var_node.value
-		# type = self.visit(declaration.type_node)
-		# self.GLOBAL_SCOPE[var_name]['type'] = type
 		pass
 
 	def visit_Type(self, type_node):
-		# return type_node.value
 		pass
 
 	def visit_Compound(self, compound):
@@ -507,11 +618,11 @@ class Interpreter(NodeVisitor):
 
 	def visit_Assignment(self, assignment):
 		var_name = assignment.var.value
-		self.GLOBAL_SCOPE[var_name] = self.visit(assignment.expr)
+		self.GLOBAL_MEMORY[var_name] = self.visit(assignment.expr)
 
 	def visit_Variable(self, var_node):
 		var_name = var_node.value
-		val = self.GLOBAL_SCOPE.get(var_name)
+		val = self.GLOBAL_MEMORY.get(var_name)
 		if val == None:
 			raise NameError(repr(var_name))
 		else:
@@ -561,9 +672,15 @@ def main():
 	text = open("/Users/paultalma/Programming/simple-interpreters/pascal-interpreter/test.txt", 'r').read()
 	lexer = Lexer(text)
 	parser = Parser(lexer)
-	interpreter = Interpreter(parser)
+	tree = parser.parse()
+	symbol_table_builder = SymbolTableBuilder()
+	symbol_table_builder.visit_Program(tree)
+
+	print(symbol_table_builder.symbol_table)
+
+	interpreter = Interpreter(tree)
 	result = interpreter.interpret()
-	print(interpreter.GLOBAL_SCOPE)
+	print(f"GLOBAL_MEMORY: {interpreter.GLOBAL_MEMORY}")
 
 if __name__ == "__main__":
 	main()
