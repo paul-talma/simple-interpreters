@@ -304,6 +304,7 @@ class Assignment(AST):
 class UnOp(AST):
     def __init__(self, op, expr):
         self.op = op.type
+        self.op_value = op.value
         self.expr = expr
 
     def __str__(self):
@@ -478,7 +479,7 @@ class Parser:
 
     def formal_parameters(self):
         """
-        formal_parameter : ID (COMMA ID)* COLON type_spec
+        formal_parameters : ID (COMMA ID)* COLON type_spec
         """
         param_tokens = [self.token]
         self.eat(ID)
@@ -487,8 +488,8 @@ class Parser:
             param_tokens.append(self.token)
             self.eat(ID)
         self.eat(COLON)
-        type = self.type_spec()
-        param_list = [Param(Variable(var), type) for var in param_tokens]
+        param_type = self.type_spec()
+        param_list = [Param(Variable(var), param_type) for var in param_tokens]
 
         return param_list
 
