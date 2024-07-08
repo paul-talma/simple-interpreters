@@ -1,6 +1,6 @@
 # simple-interpreters
 
-Working up to implementing an interpreter for a simple language. `calc.py` is an interpreter for a simple calculator.
+Working up to implementing an interpreter for a simple language. `calc.py` is an interpreter for a simple calculator. `pascal-interpreter` is, predictably, an interpreter for Pascal.
 
 Thanks to [Ruslan Spivak](https://ruslanspivak.com).
 
