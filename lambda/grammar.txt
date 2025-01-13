@@ -1,0 +1,6 @@
+expression: variable
+					| abstraction
+					| application
+abstraction: LAMBDA variable DOT expression
+application: LPAR expression expression RPAR
+variable: VAR
