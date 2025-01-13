@@ -859,7 +859,7 @@ class Interpreter(NodeVisitor):
     def visit_Variable(self, var_node):
         var_name = var_node.value
         val = self.GLOBAL_MEMORY.get(var_name)
-        if val == None:
+        if val is None:
             raise NameError(repr(var_name))
         else:
             return val
