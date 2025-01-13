@@ -4,13 +4,12 @@
 # application: LPAR term term RPAR
 # variable: VARID
 
+from terms import Variable, Abstraction, Application
+from lexer import TokenTypes
+
 
 class ParserError(Exception):
     """Unexpected token"""
-
-
-from main.terms import Variable, Abstraction, Application
-from main.lexer import TokenTypes
 
 
 class Parser:

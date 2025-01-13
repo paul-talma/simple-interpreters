@@ -1,4 +1,4 @@
-from main.terms import Abstraction
+from terms import Abstraction
 
 
 class NodeVisitor:

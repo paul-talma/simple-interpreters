@@ -1,4 +1,4 @@
-from main.interpreter import NodeVisitor
+from interpreter import NodeVisitor
 
 
 class LatexTranspiler(NodeVisitor):
